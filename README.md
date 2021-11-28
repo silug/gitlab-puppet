@@ -1,11 +1,11 @@
-# basic-aio
-## Bootstrap a basic Puppet environment using AIO packages
+# gitlab-puppet
+## Bootstrap a Puppet + GitLab environment
 
-The production branch of this repo contains a Vagrantfile that will build a Puppet
-server using the Puppet all-in-one packages with the following configured
-out of the box:
+This repo contains a Vagrantfile and a Bolt plan that will build a GitLab
+server, GitLab runners (with the Docker executor configured to use rootless
+`podman`), and a Puppet server with the following configured out of the box:
 * [r10k](https://forge.puppet.com/puppet/r10k) (with this repo as its control repo)
-* [Choria mcollective](http://choria.io/)
+* [Choria](http://choria.io/)
 * [PuppetDB](https://puppet.com/docs/puppetdb/)
 
 ## Prerequisites
@@ -14,7 +14,7 @@ In order to use this project, you'll need
 [Vagrant](https://vagrantup.com/) and
 [Bolt](https://puppet.com/docs/bolt/latest/bolt.html) installed.
 
-### Configuring basic-aio
+### Configuring
 
 The following environment variables are used to configure the Vagrant environment:
 
@@ -25,9 +25,12 @@ The following environment variables are used to configure the Vagrant environmen
 | `PUPPET_RELEASE`     | `7`                              | The Puppet major release version               |
 | `EL_RELEASE`         | `8`                              | The EL release of the base box                 |
 | `BOX`                | `centos/${EL_RELEASE}`           | The base box name                              |
+| `GITLAB_PACKAGE`     | `gitlab-ce-*.rpm` (if it exists) | The name of a locally-cached GitLab CE package |
 
 ## See also
 
+For a simpler Puppet server/agent configuration, see
+[basic-aio](https://github.com/puppet-bootstrap/basic-aio).
 To get started with just an agent, take a look at
 [sandbox](https://github.com/puppet-bootstrap/sandbox).  For a simple control
 repo example, see

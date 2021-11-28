@@ -5,6 +5,7 @@
 # @param demo Use defaults for a demo environment
 # @param control_repo URL of the control repo
 # @param choria_user User name of the demo choria user on the Puppet server
+# @param gitlab_package Locally cached gitlab-ce rpm
 plan role (
   Integer          $puppet_release,
   Optional[String] $puppet_version = undef,
@@ -21,6 +22,7 @@ plan role (
     true    => 'vagrant',
     default => undef,
   },
+  Optional[String] $gitlab_package = undef,
 ) {
   # We want to specify the Puppet agent version to install,
   # so we start by running the puppet_agent::install task.
@@ -77,6 +79,12 @@ plan role (
         /^puppet/: {
           add_facts($target, { 'role' => 'puppet' })
         }
+        /^gitlab/: {
+          add_facts($target, { 'role' => 'gitlab' })
+        }
+        /^runner/: {
+          add_facts($target, { 'role' => 'runner' })
+        }
         default: {}
       }
     }
@@ -91,6 +99,25 @@ plan role (
     }.lest || {
       $memo + { $role => [$target] }
     }
+  }
+
+  # If there is a local gitlab-ce package, install it on the gitlab target(s)
+  if !$gitlab_package.empty and file::exists($gitlab_package) {
+    upload_file($gitlab_package, '/root', $targets_with_role['gitlab'])
+    apply(
+      $targets_with_role['gitlab'],
+      '_description' => "Install cached GitLab package ${basename($gitlab_package)}",
+    ) {
+      package { 'gitlab-ce':
+        ensure => installed,
+        source => "/root/${basename($gitlab_package)}",
+      }
+    }
+  }
+
+  # Configure GitLab on the gitlab target(s)
+  apply($targets_with_role['gitlab'], '_description' => 'Configure GitLab') {
+    include gitlab
   }
 
   # On the puppet server target, configure r10k.

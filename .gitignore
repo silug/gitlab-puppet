@@ -58,3 +58,6 @@ Gemfile.lock
 ## Bolt-related files
 /Boltdir/*.log
 /Boltdir/.*
+
+# Locally-cached GitLab CE packages
+/gitlab-ce-*.rpm
