@@ -2,19 +2,25 @@
 # @param puppet_release The major version of Puppet to use
 # @param puppet_version The version of puppet-agent to install
 # @param targets The targets to run on
-# @param puppet_target The puppet server target
+# @param demo Use defaults for a demo environment
 # @param control_repo URL of the control repo
 # @param choria_user User name of the demo choria user on the Puppet server
 plan role (
   Integer          $puppet_release,
   Optional[String] $puppet_version = undef,
   TargetSpec       $targets        = 'all',
-  TargetSpec       $puppet_target  = 'puppet',
+  Boolean          $demo           = false,
   Variant[
     Stdlib::HTTPUrl,
     Pattern[/\Afile:\/\/\/([^\n\/\0]+(\/)?)+\z/]
-  ]                $control_repo   = 'file:///vagrant/',
-  Optional[String] $choria_user    = 'vagrant',
+  ]                $control_repo   = $demo ? {
+    true    => 'file:///vagrant/',
+    default => undef,
+  },
+  Optional[String] $choria_user    = $demo ? {
+    true    => 'vagrant',
+    default => undef,
+  },
 ) {
   # We want to specify the Puppet agent version to install,
   # so we start by running the puppet_agent::install task.
@@ -64,8 +70,31 @@ plan role (
     }
   }
 
+  # Add a `role` fact based on the hostname if one isn't already set
+  get_targets($targets).each |$target| {
+    if $target.facts['role'] =~ Undef {
+      case $target.facts['hostname'] {
+        /^puppet/: {
+          add_facts($target, { 'role' => 'puppet' })
+        }
+        default: {}
+      }
+    }
+  }
+
+  # Build a Hash of the defined roles
+  $targets_with_role = get_targets($targets).reduce({}) |$memo, $target| {
+    $role = $target.facts['role'].lest || { 'none' }
+
+    $memo[$role].then |$r| {
+      $memo + { $role => $r + [$target] }
+    }.lest || {
+      $memo + { $role => [$target] }
+    }
+  }
+
   # On the puppet server target, configure r10k.
-  apply($puppet_target, '_description' => 'Configure r10k') {
+  apply($targets_with_role['puppet'], '_description' => 'Configure r10k') {
     class { 'git': }
     -> class { 'r10k':
       remote => $control_repo,
@@ -77,7 +106,7 @@ plan role (
   }
 
   # On the puppet server target, install and start the puppetserver.
-  apply($puppet_target, '_description' => 'Install and start server components') {
+  apply($targets_with_role['puppet'], '_description' => 'Install and start server components') {
     include puppetserver
     include profile::puppetserver::config
   }
@@ -85,7 +114,7 @@ plan role (
   # Run the puppet agent to finish.
   run_command(
     'puppet agent -t -w 30 || { [ $? -eq 2 ] && true; };',
-    $puppet_target,
+    $targets_with_role['puppet'],
     'First Puppet agent run',
     '_env_vars' => {
       'PATH' => '/opt/puppetlabs/bin:/bin:/usr/bin',
@@ -93,19 +122,36 @@ plan role (
   )
 
   if $choria_user {
-    # Request a choria cert.
-    run_command(
-      'choria enroll',
-      $puppet_target,
-      'Request a choria cert',
-      '_run_as' => $choria_user,
+    # Get the home directory of the choria user.
+    $getent = run_command(
+      "getent passwd ${choria_user}",
+      $targets_with_role['puppet'],
+      "Get information about user '${choria_user}'",
     )
+    $home = $getent.ok_set.first.value['stdout'].split(':')[5]
+
+    # Request a choria cert.
+    apply(
+      $targets_with_role['puppet'],
+      '_description' => 'Request a choria cert',
+    ) {
+      exec { 'choria enroll':
+        creates     => "${home}/.puppetlabs/etc/puppet/ssl/certs/${choria_user}.mcollective.pem",
+        cwd         => $home,
+        path        => ['/bin', '/usr/bin', '/opt/puppetlabs/bin'],
+        user        => $choria_user,
+        environment => [
+          "HOME=${home}",
+          "USER=${choria_user}",
+        ],
+      }
+    }
   }
 
   # Run the puppet agent on the remaining targets.
   run_command(
     'puppet agent -t -w 30 || { [ $? -eq 2 ] && true; };',
-    get_targets($targets) - get_targets($puppet_target),
+    get_targets($targets) - get_targets($targets_with_role['puppet']),
     'First Puppet agent run',
     '_env_vars' => {
       'PATH' => '/opt/puppetlabs/bin:/bin:/usr/bin',

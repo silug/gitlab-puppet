@@ -53,6 +53,7 @@ Vagrant.configure('2') do |config|
         'bolt plan run role -t all --run-as root',
         "puppet_release=#{puppet_release}",
         "puppet_version=#{puppet_version}",
+        "demo=true",
       ].join(' ')
     }
   end

@@ -2,6 +2,10 @@
 version: 5
 hierarchy:
   - name: "FQDN"
-    path: "nodes/%{::trusted.certname}.yaml"
+    paths:
+      - "nodes/%{trusted.certname}.yaml"
+      - "nodes/%{facts.fqdn}.yaml"
+  - name: "Role"
+    path: "roles/%{facts.role}.yaml"
   - name: "Defaults"
     path: "common.yaml"
