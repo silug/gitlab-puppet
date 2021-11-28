@@ -4,8 +4,8 @@ ENV['VAGRANT_EXPERIMENTAL'] = 'typed_triggers'
 
 ip_subnet = ENV['IP_SUBNET'] || '192.168.32'
 puppet_version = ENV['PUPPET_VERSION'] || ''
-puppet_release = puppet_version.empty? ? (ENV['PUPPET_RELEASE'] || '6') : puppet_version.split('.').first
-el_release = ENV['EL_RELEASE'] || '7'
+puppet_release = puppet_version.empty? ? (ENV['PUPPET_RELEASE'] || '7') : puppet_version.split('.').first
+el_release = ENV['EL_RELEASE'] || '8'
 box = ENV['BOX'] || "centos/#{el_release}"
 
 Vagrant.configure('2') do |config|
