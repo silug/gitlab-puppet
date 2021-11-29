@@ -1,4 +1,8 @@
 ---
+lookup_options:
+  classes:
+    merge: unique
+
 classes:
   - role::agent
 

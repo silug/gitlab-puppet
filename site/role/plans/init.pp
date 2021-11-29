@@ -42,6 +42,24 @@ plan role (
   # installed and collect facts.
   apply_prep($targets)
 
+  # Add a `role` fact based on the hostname if one isn't already set
+  get_targets($targets).each |$target| {
+    if $target.facts['role'] =~ Undef {
+      case $target.facts['hostname'] {
+        /^puppet/: {
+          add_facts($target, { 'role' => 'puppet' })
+        }
+        /^gitlab/: {
+          add_facts($target, { 'role' => 'gitlab' })
+        }
+        /^runner/: {
+          add_facts($target, { 'role' => 'runner' })
+        }
+        default: {}
+      }
+    }
+  }
+
   # Use the collected facts to build a hash of `host` resources.
   $hosts = get_targets($targets).reduce({}) |$memo, $target| {
     $this_host = {
@@ -61,29 +79,27 @@ plan role (
     $memo + $this_host
   }
 
-  # Use the hash to configure the hosts file on each target.
+  # Use the hash to configure the hosts file and role fact on each target.
   apply($targets, '_description' => 'Configure hosts file') {
     $hosts.each |$key, $value| {
       host { $key:
         * => $value,
       }
     }
-  }
 
-  # Add a `role` fact based on the hostname if one isn't already set
-  get_targets($targets).each |$target| {
-    if $target.facts['role'] =~ Undef {
-      case $target.facts['hostname'] {
-        /^puppet/: {
-          add_facts($target, { 'role' => 'puppet' })
-        }
-        /^gitlab/: {
-          add_facts($target, { 'role' => 'gitlab' })
-        }
-        /^runner/: {
-          add_facts($target, { 'role' => 'runner' })
-        }
-        default: {}
+    if $facts['role'] {
+      file { ['/etc/facter', '/etc/facter/facts.d']:
+        ensure => directory,
+        owner  => 'root',
+        group  => 'root',
+        mode   => '0755',
+      }
+      -> file { '/etc/facter/facts.d/role.txt':
+        ensure  => file,
+        owner   => 'root',
+        group   => 'root',
+        mode    => '0644',
+        content => "role=${facts['role']}\n",
       }
     }
   }
