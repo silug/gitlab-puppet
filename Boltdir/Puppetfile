@@ -4,6 +4,7 @@
 # The following directive installs modules to the managed moduledir.
 moduledir '.modules'
 
+mod 'southalc/podman', '0.5.2'
 mod 'puppet/epel', '4.0.0'
 mod 'puppetlabs/augeas_core', '1.2.0'
 mod 'puppetlabs/translate', '1.2.0'
@@ -21,3 +22,6 @@ mod 'puppetlabs/git', '0.5.0'
 mod 'puppetlabs/stdlib', '5.2.0'
 mod 'puppet/puppetserver', '3.0.1'
 mod 'puppet/gitlab', '8.0.0'
+mod 'puppetlabs/accounts', '7.1.1'
+mod 'puppetlabs/concat', '7.0.0'
+mod 'puppetlabs/selinux_core', '1.2.0'

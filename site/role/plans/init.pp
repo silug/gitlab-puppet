@@ -167,6 +167,19 @@ plan role (
     $remote = $control_repo
   }
 
+  # Bootstrap the runners, pass 1
+  apply($targets_with_role['runner'], '_description' => 'Bootstrap GitLab CI runners (pass 1)') {
+    include accounts
+    include podman
+  }
+
+  # Bootstrap the runners, pass 2
+  apply($targets_with_role['runner'], '_description' => 'Bootstrap GitLab CI runners (pass 2)') {
+    include accounts
+    include podman
+    include systemd
+  }
+
   # On the puppet server target, configure r10k.
   apply($targets_with_role['puppet'], '_description' => 'Configure r10k') {
     class { 'git': }

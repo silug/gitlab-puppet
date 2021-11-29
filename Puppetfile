@@ -45,3 +45,8 @@ mod 'choria-choria', '0.26.2'
 mod 'puppet-systemd', '3.5.1'
 mod 'puppetlabs-augeas_core', '1.2.0' # Required by puppet-puppetserver, camptocamp-augeas
 mod 'puppet-gitlab', '8.0.0'
+mod 'puppet-gitlab_ci_runner', '4.1.0'
+mod 'puppetlabs-accounts', '7.1.1'
+mod 'southalc-podman', '0.5.2'
+mod 'saz-sudo', '7.0.2'
+mod 'puppetlabs-selinux_core', '1.2.0' # Required by southalc-podman

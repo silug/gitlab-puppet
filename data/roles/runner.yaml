@@ -1,0 +1,43 @@
+---
+classes:
+  - gitlab_ci_runner
+  - accounts
+  - podman
+  - systemd
+
+gitlab_ci_runner::concurrent: 2
+
+gitlab_ci_runner::runners:
+  "%{facts.hostname}-docker":
+    description: "%{facts.hostname}-docker"
+    tag-list: docker
+
+accounts::user_list:
+  gitlab-runner:
+    comment: 'GitLab Runner'
+    system: true
+    home: /home/gitlab-runner
+    group: gitlab-runner
+    groups:
+      - gitlab-runner
+
+accounts::group_list:
+  gitlab-runner:
+    system: true
+
+podman::manage_subuid: true
+podman::subid:
+  gitlab-runner:
+    subuid: 100000
+    count: 65535
+podman::rootless_users:
+  - gitlab-runner
+podman::enable_api_socket: true
+
+systemd::dropin_files:
+  podman.conf:
+    unit: gitlab-runner.service
+    content: |
+      [Service]
+      Environment="DOCKER_HOST=unix://%{facts.podman.socket.gitlab-runner}"
+    notify_service: true

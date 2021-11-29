@@ -1,5 +1,5 @@
 ---
-gitlab::external_url: 'http://localhost:8080'
+gitlab::external_url: 'http://%{facts.fqdn}'
 gitlab::nginx:
   listen_port: 80
   listen_https: false

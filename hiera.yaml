@@ -6,6 +6,8 @@ hierarchy:
       - "nodes/%{trusted.certname}.yaml"
       - "nodes/%{facts.fqdn}.yaml"
   - name: "Role"
-    path: "roles/%{facts.role}.yaml"
+    globs:
+      - "roles/%{facts.role}.yaml"
+      - "roles/%{facts.role}.d/*.yaml"
   - name: "Defaults"
     path: "common.yaml"

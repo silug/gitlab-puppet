@@ -11,3 +11,5 @@ modules:
 - puppet/puppetserver
 - puppet/gitlab
 - puppet/epel
+- puppetlabs/accounts
+- southalc/podman

@@ -1,5 +1,25 @@
 ---
 classes:
   - role::puppetserver
+  - sudo
+  - gitlab_ci_runner
 
 puppetdb::manage_firewall: false
+
+gitlab_ci_runner::manage_docker: false
+gitlab_ci_runner::concurrent: 1
+
+gitlab_ci_runner::runners:
+  "%{facts.hostname}-r10k":
+    description: "%{facts.hostname}-r10k"
+    executor: shell
+    shell: bash
+    tag-list: "r10k,%{facts.hostname}-r10k"
+
+sudo::purge: false
+sudo::config_file_replace: false
+sudo::configs:
+  'gitlab-runner':
+    content:
+      - "gitlab-runner %{facts.hostname} = (root) NOPASSWD: /usr/bin/r10k deploy *"
+      - "gitlab-runner %{facts.hostname} = (root) NOPASSWD: /opt/puppetlabs/bin/puppet generate types *"
