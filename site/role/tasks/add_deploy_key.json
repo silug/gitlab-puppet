@@ -1,0 +1,11 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Add a deploy key to the control repo",
+  "parameters": {
+    "key": {
+      "description": "ssh public key",
+      "type": "String[1]"
+    }
+  }
+}

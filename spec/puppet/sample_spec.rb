@@ -44,7 +44,7 @@ end
 
 describe file('/etc/puppetlabs/r10k/r10k.yaml') do
     it { should be_file }
-    its(:content_as_yaml) { should include(:sources => include('puppet' => include('remote' => 'file:///vagrant/') ) ) }
+    its(:content_as_yaml) { should include(:sources => include('puppet' => include('remote' => 'git@gitlab.vagrant:puppet/control.git') ) ) }
 end
 
 describe file('/etc/puppetlabs/code/environments/production') do

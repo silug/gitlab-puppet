@@ -11,7 +11,7 @@ gitlab_package = ENV['GITLAB_PACKAGE'] || Dir.glob("#{Dir.pwd}/gitlab-ce-*.rpm")
 
 Vagrant.configure('2') do |config|
   config.vm.box = box
-  # config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vm.synced_folder '.', '/vagrant', disabled: true
 
   config.vm.define 'puppet' do |puppet|
     %w[virtualbox libvirt].each do |provider|
@@ -41,6 +41,7 @@ Vagrant.configure('2') do |config|
 
   config.vm.define 'gitlab' do |gitlab|
     gitlab.vm.network 'forwarded_port', guest: 80, host: 8080
+    gitlab.vm.synced_folder '.', '/vagrant', disabled: false
 
     %w[libvirt virtualbox].each do |provider|
       gitlab.vm.provider provider do |p|

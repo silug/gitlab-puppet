@@ -10,3 +10,4 @@ modules:
 - puppetlabs/stdlib
 - puppet/puppetserver
 - puppet/gitlab
+- puppet/epel

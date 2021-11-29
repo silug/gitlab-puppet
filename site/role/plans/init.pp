@@ -12,12 +12,10 @@ plan role (
   TargetSpec       $targets        = 'all',
   Boolean          $demo           = false,
   Variant[
+    Undef,
     Stdlib::HTTPUrl,
     Pattern[/\Afile:\/\/\/([^\n\/\0]+(\/)?)+\z/]
-  ]                $control_repo   = $demo ? {
-    true    => 'file:///vagrant/',
-    default => undef,
-  },
+  ]                $control_repo   = undef,
   Optional[String] $choria_user    = $demo ? {
     true    => 'vagrant',
     default => undef,
@@ -117,14 +115,47 @@ plan role (
 
   # Configure GitLab on the gitlab target(s)
   apply($targets_with_role['gitlab'], '_description' => 'Configure GitLab') {
-    include gitlab
+    include role::gitlab
+  }
+
+  run_task('role::import_control_repo', $targets_with_role['gitlab'], 'Import the control repo')
+
+  if $control_repo =~ Undef {
+    $remote = "git@${$targets_with_role['gitlab'][0].facts['fqdn']}:puppet/control.git"
+
+    $ssh_config = @("SSH_CONFIG"/L)
+      Host ${$targets_with_role['gitlab'][0].facts['fqdn']}
+        StrictHostKeyChecking no
+      | SSH_CONFIG
+
+    apply($targets_with_role['puppet'], '_description' => 'Generate ssh keys') {
+      exec { 'ssh-keygen -f /root/.ssh/id_rsa -t rsa -b 4096 -N ""':
+        path    => '/bin:/usr/bin',
+        creates => '/root/.ssh/id_rsa.pub',
+      }
+      -> file { '/root/.ssh/config':
+        ensure  => file,
+        content => $ssh_config,
+      }
+    }
+    download_file('/root/.ssh/id_rsa.pub', 'sshkeys', $targets_with_role['puppet'])
+    $targets_with_role['puppet'].each |$target| {
+      run_task(
+        'role::add_deploy_key',
+        $targets_with_role['gitlab'],
+        "Add a deploy key for ${target}",
+        'key' => file::read("${system::env('PWD')}/Boltdir/downloads/sshkeys/${target}/id_rsa.pub"),
+      )
+    }
+  } else {
+    $remote = $control_repo
   }
 
   # On the puppet server target, configure r10k.
   apply($targets_with_role['puppet'], '_description' => 'Configure r10k') {
     class { 'git': }
     -> class { 'r10k':
-      remote => $control_repo,
+      remote => $remote,
     }
     -> exec { 'r10k deploy environment -pv':
       path    => '/opt/puppetlabs/bin:/bin:/usr/bin:/sbin:/usr/sbin',

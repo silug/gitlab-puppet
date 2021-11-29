@@ -1,0 +1,7 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Set up GitLab and import a control repo",
+  "parameters": {
+  }
+}
